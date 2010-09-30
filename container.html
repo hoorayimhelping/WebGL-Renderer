@@ -4,19 +4,51 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>WebGL</title>
-
+  <link rel="stylesheet" href="main.css" media="screen">
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      start();
+    });
+
+    var start = function() {
+      var canvas = $('#gl-canvas').get(0);
+
+      var gl = initWebGl(canvas);
+
+      if (gl) {
+        gl.clearColor(1.0, 0.0, 0.5, 1.0);
+        gl.clearDepth(1.0);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      }
+    }
+
+    // Try to initialize WebGL from our canvas context
+    var initWebGl = function(canvas) {
+      var gl = null;
+
+      try {
+        gl = canvas.getContext('experimental-webgl');
+      }
+      catch (e) { 
+        console.error(e);
+      }
+
+      if (!gl) {
+        console.error("Couldn't initialize WebGl. Sorry");
+      }
+
+      return gl;
+    }
+  </script>
 </head>
 <body>
 
-<canvas id="target">
+<canvas id="gl-canvas">
   Bad news, everyone. Your console doesn't support Canvas. Get with the times, you.
 </canvas>
-
-<script type="text/javascript">
-  $(document).ready(function() {
-    start();
-  });
-</script>
 </body>
 </html>
