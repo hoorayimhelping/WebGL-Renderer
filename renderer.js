@@ -1,26 +1,135 @@
 var Renderer = function(container) {
   var self = this;
 
+	self.canvas = container || null;
+
   self.gl = null;
-  self.canvas = container || null;
+	self.shaderProgram = null;
+	self.vertexPositionAttribute = null;
+	self.squareVerticesBuffer = null;
+	self.aspectRatio = 0.0;
+	self.perspectiveMatrix = null;
+
+	self.mvMatrix = null;
 
   this.drawScene = function() {
     if (self.gl) {
-      self.gl.clearColor(1.0, 0.0, 0.5, 1.0);
-      self.gl.clearDepth(1.0);
-      self.gl.enable(self.gl.DEPTH_TEST);
-      self.gl.depthFunc(self.gl.LEQUAL);
-      self.gl.clear(self.gl.COLOR_BUFFER_BIT);
+      self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
+
+      self.perspectiveMatrix = makePerspective(45, self.gl.viewportWidth / self.gl.viewportHeight, 0.1, 100.0);
+
+			loadIdentity();
+			mvTranslate([0.0, 0.0, -6.0]);
+
+			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVerticesBuffer);
+			self.gl.vertexAttribPointer(self.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
+
+			setMatrixUniforms();
+			self.gl.drawArrays(self.gl.TRIANGLE_STRIP, 0, 4);
     }
   }
 
-  var intializeContainer = function(canvas) {
+	var getShader = function(id) {
+	  var shaderScript = document.getElementById(id);
+
+		if (!shaderScript) {
+		  return null;
+		}
+
+		var theSource = "";
+		var currentChild = shaderScript.firstChild;
+
+		while(currentChild) {
+		  if (currentChild.nodeType == 3) {
+		    theSource += currentChild.textContent;
+		  }
+
+    	currentChild = currentChild.nextSibling;
+    }
+
+		var shader;
+
+    if (shaderScript.type === "x-shader/x-fragment") {
+      shader = self.gl.createShader(self.gl.FRAGMENT_SHADER);
+    }
+		else if (shaderScript.type === "x-shader/x-vertex") {
+      shader = self.gl.createShader(self.gl.VERTEX_SHADER);
+    }
+		else {
+      return null;
+    }
+
+		self.gl.shaderSource(shader, theSource);
+		self.gl.compileShader(shader);
+
+		if (!self.gl.getShaderParameter(shader, self.gl.COMPILE_STATUS)) {
+      console.error("An error occurred compiling the shaders: " + self.gl.getShaderInfoLog(shader));
+		  return null;
+		}
+
+	  return shader;
+	}
+
+	var initializeBuffers = function() {
+		self.squareVerticesBuffer = self.gl.createBuffer();
+		self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVerticesBuffer);
+
+		var vertices = [
+		  1.0,  1.0, 0.0,  
+		 -1.0,  1.0, 0.0,  
+      1.0, -1.0, 0.0,  
+	   -1.0, -1.0, 0.0
+		];
+
+		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
+	}
+
+	var initializeShaders = function() {
+//	  var fragmentShader = getShader("shader-fs");
+	//	var vertexShader = getShader("shader-vs");
+
+		var vertexShader = self.gl.shaderSource(self.gl.createShader(self.gl.VERTEX_SHADER), 
+			"attribute vec3 aVertexPosition;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;" +
+	    "void main(void) { gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);}");
+
+		var fragmentShader = self.gl.shaderSource(self.gl.createShader(self.gl.FRAGMENT_SHADER),
+			"#ifdef GL_ES precision highp float; #endif" +
+	    "void main(void) { gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); }");
+
+	  self.gl.compileShader(vertexShader);
+		if (!self.gl.getShaderParameter(vertexShader, self.gl.COMPILE_STATUS)) {
+			console.log(self.gl.getShaderInfoLog(vertexShader))
+		}
+
+	  self.gl.compileShader(fragmentShader);
+		if (!self.gl.getShaderParameter(fragmentShader, self.gl.COMPILE_STATUS)) {
+			console.log(self.gl.getShaderInfoLog(fragmentShader))
+		}
+
+		self.shaderProgram = self.gl.createProgram();
+		self.gl.attachShader(self.shaderPogram, vertexShader);
+		self.gl.attachShader(self.shaderProgram, fragmentShader);
+		self.gl.linkProgram(self.shaderProgram);
+
+		if (!self.gl.getProgramParameter(self.shaderProgram, self.gl.LINK_STATUS)) {
+			console.error("Couldn't initialize shader program. Sorry", self.gl.getProgramInfoLog(self.shaderProgram));
+		}
+
+		self.gl.useProgram(self.shaderProgram);
+
+		self.vertexPositionAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexPosition");
+		self.gl.enableVertexAttribArray(self.vertexPositionAttribute);
+	}
+
+  var initializeContainer = function(canvas) {
     var gl = null;
 
     try {
       gl = canvas.getContext('experimental-webgl');
+			gl.viewportWidth = canvas.width;
+			gl.viewportHeight = canvas.height;
     }
-    catch (e) { 
+    catch (e) {
       console.error(e);
     }
 
@@ -31,5 +140,39 @@ var Renderer = function(container) {
     return gl;
   }
 
-  self.gl = intializeContainer(this.canvas);
+	function loadIdentity() {  
+    self.mvMatrix = Matrix.I(4);  
+  }  
+    
+  function multMatrix(m) {  
+    self.mvMatrix = self.mvMatrix.x(m);  
+  }  
+    
+  function mvTranslate(v) {  
+    multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());  
+  }  
+    
+  function setMatrixUniforms() {  
+    var pUniform = self.gl.getUniformLocation(self.shaderProgram, "uPMatrix");  
+    self.gl.uniformMatrix4fv(pUniform, false, new Float32Array(self.perspectiveMatrix.flatten()));  
+    
+    var mvUniform = self.gl.getUniformLocation(self.shaderProgram, "uMVMatrix");  
+    self.gl.uniformMatrix4fv(mvUniform, false, new Float32Array(self.mvMatrix.flatten()));  
+  }
+
+	var initialize = function() {
+	  self.gl = initializeContainer(self.canvas);
+
+		if (self.gl) {
+		  self.gl.clearColor(1.0, 0.0, 0.5, 1.0);
+      self.gl.clearDepth(1.0);
+      self.gl.enable(self.gl.DEPTH_TEST);
+      self.gl.depthFunc(self.gl.LEQUAL);
+		}
+
+		initializeShaders();
+		initializeBuffers();
+	}
+
+  initialize();
 }
