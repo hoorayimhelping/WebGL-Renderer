@@ -102,8 +102,6 @@ var Renderer = function(container) {
 		];
 
 		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
-		self.squareVerticesBuffer.itemSize = 3;
-		self.squareVerticesBuffer.numItems = 4;
 	}
 
   var initializeContainer = function(canvas) {
