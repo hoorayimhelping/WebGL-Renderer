@@ -85,26 +85,8 @@ var Renderer = function(container) {
 	}
 
 	var initializeShaders = function() {
-//	  var fragmentShader = getShader("shader-fs");
-	//	var vertexShader = getShader("shader-vs");
-
-		var vertexShader = self.gl.shaderSource(self.gl.createShader(self.gl.VERTEX_SHADER), 
-			"attribute vec3 aVertexPosition;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;" +
-	    "void main(void) { gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);}");
-
-		var fragmentShader = self.gl.shaderSource(self.gl.createShader(self.gl.FRAGMENT_SHADER),
-			"#ifdef GL_ES precision highp float; #endif" +
-	    "void main(void) { gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); }");
-
-	  self.gl.compileShader(vertexShader);
-		if (!self.gl.getShaderParameter(vertexShader, self.gl.COMPILE_STATUS)) {
-			console.log(self.gl.getShaderInfoLog(vertexShader))
-		}
-
-	  self.gl.compileShader(fragmentShader);
-		if (!self.gl.getShaderParameter(fragmentShader, self.gl.COMPILE_STATUS)) {
-			console.log(self.gl.getShaderInfoLog(fragmentShader))
-		}
+	  var fragmentShader = getShader("shader-fs");
+		var vertexShader = getShader("shader-vs");
 
 		self.shaderProgram = self.gl.createProgram();
 		self.gl.attachShader(self.shaderPogram, vertexShader);
