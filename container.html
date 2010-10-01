@@ -5,7 +5,9 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>WebGL</title>
   <link rel="stylesheet" href="main.css" media="screen">
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js">
+    jQuery.noConflict();
+  </script>
   <script type="text/javascript" src="sylvester.js"></script>
   <script type="text/javascript" src="glUtils.js"></script>
 
@@ -15,7 +17,7 @@
     #endif
   
     void main(void) {
-      gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
     }
   </script>
 
@@ -33,8 +35,10 @@
   <script type="text/javascript" src="renderer.js"></script>
   <script type="text/javascript">
     $(document).ready(function() {
-      var r = new Renderer($('#gl-canvas').get(0));
-      r.drawScene();
+      r = new Renderer(jQuery('#gl-canvas').get(0));
+      setInterval(function() {
+        r.drawScene();
+      }, 15)
     });
   </script>
 </head>

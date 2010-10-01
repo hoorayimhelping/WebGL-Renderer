@@ -14,11 +14,12 @@ var Renderer = function(container) {
 
   this.drawScene = function() {
     if (self.gl) {
+			self.gl.viewport(0, 0, self.gl.viewportWidth, self.gl.viewportHeight);
       self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
       self.perspectiveMatrix = makePerspective(45, self.gl.viewportWidth / self.gl.viewportHeight, 0.1, 100.0);
-
 			loadIdentity();
+
 			mvTranslate([0.0, 0.0, -6.0]);
 
 			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVerticesBuffer);
@@ -70,6 +71,25 @@ var Renderer = function(container) {
 	  return shader;
 	}
 
+	var initializeShaders = function() {
+	  var fragmentShader = getShader("shader-fs");
+		var vertexShader = getShader("shader-vs");
+
+		self.shaderProgram = self.gl.createProgram();
+		self.gl.attachShader(self.shaderProgram, vertexShader);
+		self.gl.attachShader(self.shaderProgram, fragmentShader);
+		self.gl.linkProgram(self.shaderProgram);
+
+		if (!self.gl.getProgramParameter(self.shaderProgram, self.gl.LINK_STATUS)) {
+			console.error("Couldn't initialize shader program. Sorry", self.gl.getProgramInfoLog(self.shaderProgram));
+		}
+
+		self.gl.useProgram(self.shaderProgram);
+
+		self.vertexPositionAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexPosition");
+		self.gl.enableVertexAttribArray(self.vertexPositionAttribute);
+	}
+
 	var initializeBuffers = function() {
 		self.squareVerticesBuffer = self.gl.createBuffer();
 		self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVerticesBuffer);
@@ -82,25 +102,8 @@ var Renderer = function(container) {
 		];
 
 		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
-	}
-
-	var initializeShaders = function() {
-	  var fragmentShader = getShader("shader-fs");
-		var vertexShader = getShader("shader-vs");
-
-		self.shaderProgram = self.gl.createProgram();
-		self.gl.attachShader(self.shaderPogram, vertexShader);
-		self.gl.attachShader(self.shaderProgram, fragmentShader);
-		self.gl.linkProgram(self.shaderProgram);
-
-		if (!self.gl.getProgramParameter(self.shaderProgram, self.gl.LINK_STATUS)) {
-			console.error("Couldn't initialize shader program. Sorry", self.gl.getProgramInfoLog(self.shaderProgram));
-		}
-
-		self.gl.useProgram(self.shaderProgram);
-
-		self.vertexPositionAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexPosition");
-		self.gl.enableVertexAttribArray(self.vertexPositionAttribute);
+		self.squareVerticesBuffer.itemSize = 3;
+		self.squareVerticesBuffer.numItems = 4;
 	}
 
   var initializeContainer = function(canvas) {
@@ -146,14 +149,14 @@ var Renderer = function(container) {
 	  self.gl = initializeContainer(self.canvas);
 
 		if (self.gl) {
-		  self.gl.clearColor(1.0, 0.0, 0.5, 1.0);
+		  self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
       self.gl.clearDepth(1.0);
       self.gl.enable(self.gl.DEPTH_TEST);
       self.gl.depthFunc(self.gl.LEQUAL);
-		}
 
-		initializeShaders();
-		initializeBuffers();
+			initializeShaders();
+			initializeBuffers();
+		}
 	}
 
   initialize();
