@@ -6,6 +6,7 @@ var Renderer = function(container) {
   self.gl = null;
 	self.shaderProgram = null;
 	self.squareVertexPositionBuffer = null;
+	self.squareVertexColorBuffer = null;
 	self.aspectRatio = 0.0;
 	self.perspectiveMatrix = null;
 
@@ -23,6 +24,9 @@ var Renderer = function(container) {
 
 			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexPositionBuffer);
 			self.gl.vertexAttribPointer(self.shaderProgram.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
+
+			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexColorBuffer);
+			self.gl.vertexAttribPointer(self.shaderProgram.vertexColorAttribute, 4, self.gl.FLOAT, false, 0, 0);
 
 			setMatrixUniforms();
 			self.gl.drawArrays(self.gl.TRIANGLE_STRIP, 0, 4);
@@ -87,6 +91,9 @@ var Renderer = function(container) {
 
 		self.shaderProgram.vertexPositionAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexPosition");
 		self.gl.enableVertexAttribArray(self.shaderProgram.vertexPositionAttribute);
+
+		self.shaderProgram.vertexColorAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexColor");
+		self.gl.enableVertexAttribArray(self.shaderProgram.vertexColorAttribute);
 	}
 
 	var initializeBuffers = function() {
@@ -101,6 +108,17 @@ var Renderer = function(container) {
 		];
 
 		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
+
+		self.squareVertexColorBuffer = self.gl.createBuffer();
+		self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexColorBuffer);
+		var colors = [
+			1.0, 0.0, 0.0, 1.0,
+			0.0, 1.0, 0.0, 1.0,
+			0.0, 0.0, 1.0, 1.0,
+			0.0, 1.0, 1.0, 1.0
+		];
+
+		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(colors), self.gl.STATIC_DRAW);
 	}
 
   var initializeContainer = function(canvas) {
