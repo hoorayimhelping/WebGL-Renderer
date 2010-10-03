@@ -5,8 +5,7 @@ var Renderer = function(container) {
 
   self.gl = null;
 	self.shaderProgram = null;
-	self.vertexPositionAttribute = null;
-	self.squareVerticesBuffer = null;
+	self.squareVertexPositionBuffer = null;
 	self.aspectRatio = 0.0;
 	self.perspectiveMatrix = null;
 
@@ -22,8 +21,8 @@ var Renderer = function(container) {
 
 			mvTranslate([0.0, 0.0, -6.0]);
 
-			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVerticesBuffer);
-			self.gl.vertexAttribPointer(self.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
+			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexPositionBuffer);
+			self.gl.vertexAttribPointer(self.shaderProgram.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
 
 			setMatrixUniforms();
 			self.gl.drawArrays(self.gl.TRIANGLE_STRIP, 0, 4);
@@ -86,13 +85,13 @@ var Renderer = function(container) {
 
 		self.gl.useProgram(self.shaderProgram);
 
-		self.vertexPositionAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexPosition");
-		self.gl.enableVertexAttribArray(self.vertexPositionAttribute);
+		self.shaderProgram.vertexPositionAttribute = self.gl.getAttribLocation(self.shaderProgram, "aVertexPosition");
+		self.gl.enableVertexAttribArray(self.shaderProgram.vertexPositionAttribute);
 	}
 
 	var initializeBuffers = function() {
-		self.squareVerticesBuffer = self.gl.createBuffer();
-		self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVerticesBuffer);
+		self.squareVertexPositionBuffer = self.gl.createBuffer();
+		self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexPositionBuffer);
 
 		var vertices = [
 		  1.0,  1.0, 0.0,  
