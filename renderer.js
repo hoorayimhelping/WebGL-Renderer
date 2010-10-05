@@ -10,6 +10,12 @@ var Renderer = function(container) {
 	self.aspectRatio = 0.0;
 	self.perspectiveMatrix = null;
 
+	self.rotation = 0;
+
+	self.lastTime = 0;
+	self.currentTime = 0;
+	self.elapsedTime = 0;
+
 	self.mvMatrix = null;
 
   this.drawScene = function() {
@@ -22,6 +28,9 @@ var Renderer = function(container) {
 
 			mvTranslate([0.0, 0.0, -6.0]);
 
+			animate();
+			mvRotate(self.rotation, [1, 1, 0]);
+
 			self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexPositionBuffer);
 			self.gl.vertexAttribPointer(self.shaderProgram.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
 
@@ -32,6 +41,17 @@ var Renderer = function(container) {
 			self.gl.drawArrays(self.gl.TRIANGLE_STRIP, 0, 4);
     }
   }
+
+	var animate = function() {
+	  self.currentTime = new Date().getTime();
+
+		if (self.lastTime != 0) {
+		  self.elapsedTime = self.currentTime - self.lastTime;
+
+			self.rotation += (75 * self.elapsedTime) / 1000.0;
+		}
+		self.lastTime = self.currentTime;
+	}
 
 	var getShader = function(id) {
 	  var shaderScript = document.getElementById(id);
@@ -115,7 +135,7 @@ var Renderer = function(container) {
 			1.0, 0.0, 0.0, 1.0,
 			0.0, 1.0, 0.0, 1.0,
 			0.0, 0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0, 1.0
+			1.0, 1.0, 0.0, 1.0
 		];
 
 		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(colors), self.gl.STATIC_DRAW);
@@ -151,7 +171,14 @@ var Renderer = function(container) {
   function mvTranslate(v) {  
     multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());  
   }  
-    
+
+	function mvRotate(ang, v) {
+	  var radians = ang * Math.PI / 180.0;
+
+		var m = Matrix.Rotation(radians, $V([v[0], v[1], v[2]])).ensure4x4();
+		multMatrix(m);
+	}
+
   function setMatrixUniforms() {  
     var pUniform = self.gl.getUniformLocation(self.shaderProgram, "uPMatrix");  
     self.gl.uniformMatrix4fv(pUniform, false, new Float32Array(self.perspectiveMatrix.flatten()));  
