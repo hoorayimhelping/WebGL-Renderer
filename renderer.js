@@ -5,8 +5,8 @@ var Renderer = function(container) {
 
   self.gl = null;
   self.shaderProgram = null;
-  self.squareVertexPositionBuffer = null;
-  self.squareVertexColorBuffer = null;
+  self.cubeVertexPositionBuffer = null;
+  self.cubeVertexColorBuffer = null;
   self.aspectRatio = 0.0;
   self.perspectiveMatrix = null;
 
@@ -17,6 +17,8 @@ var Renderer = function(container) {
   self.elapsedTime = 0;
 
   self.mvMatrix = null;
+
+	self.mvMatrixStack = [];
 
   this.drawScene = function() {
     if (self.gl) {
@@ -31,10 +33,10 @@ var Renderer = function(container) {
       animate();
       mvRotate(self.rotation, [1, 1, 0]);
 
-      self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexPositionBuffer);
+      self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexPositionBuffer);
       self.gl.vertexAttribPointer(self.shaderProgram.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
 
-      self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexColorBuffer);
+      self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexColorBuffer);
       self.gl.vertexAttribPointer(self.shaderProgram.vertexColorAttribute, 4, self.gl.FLOAT, false, 0, 0);
 
       setMatrixUniforms();
@@ -117,8 +119,8 @@ var Renderer = function(container) {
   }
 
   var initializeBuffers = function() {
-    self.squareVertexPositionBuffer = self.gl.createBuffer();
-    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexPositionBuffer);
+    self.cubeVertexPositionBuffer = self.gl.createBuffer();
+    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexPositionBuffer);
 
     var vertices = [
       1.0,  1.0, 0.0,  
@@ -129,8 +131,8 @@ var Renderer = function(container) {
 
     self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
 
-    self.squareVertexColorBuffer = self.gl.createBuffer();
-    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.squareVertexColorBuffer);
+    self.cubeVertexColorBuffer = self.gl.createBuffer();
+    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexColorBuffer);
     var colors = [
       1.0, 0.0, 0.0, 1.0,
       0.0, 1.0, 0.0, 1.0,
@@ -160,32 +162,49 @@ var Renderer = function(container) {
     return gl;
   }
 
-  function loadIdentity() {  
+  var loadIdentity = function() {  
     self.mvMatrix = Matrix.I(4);  
   }  
     
-  function multMatrix(m) {  
+  var multMatrix = function(m) {  
     self.mvMatrix = self.mvMatrix.x(m);  
   }  
     
-  function mvTranslate(v) {  
+  var mvTranslate = function(v) {  
     multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());  
   }  
 
-  function mvRotate(ang, v) {
+  var mvRotate = function(ang, v) {
     var radians = ang * Math.PI / 180.0;
 
     var m = Matrix.Rotation(radians, $V([v[0], v[1], v[2]])).ensure4x4();
     multMatrix(m);
   }
 
-  function setMatrixUniforms() {  
+  var setMatrixUniforms = function() {  
     var pUniform = self.gl.getUniformLocation(self.shaderProgram, "uPMatrix");  
     self.gl.uniformMatrix4fv(pUniform, false, new Float32Array(self.perspectiveMatrix.flatten()));  
     
     var mvUniform = self.gl.getUniformLocation(self.shaderProgram, "uMVMatrix");  
     self.gl.uniformMatrix4fv(mvUniform, false, new Float32Array(self.mvMatrix.flatten()));  
   }
+
+	var mvPushMatrix = function(m) {
+	  if (m) {
+	    self.mvMatrixStack.push(m.dup());
+	    self.mvMatrix = m.dup();
+	  } else {
+	    self.mvMatrixStack.push(self.mvMatrix.dup());
+	  }
+	}
+
+	var mvPopMatrix = function() {
+	  if (self.mvmvMatrixStack.length == 0) {
+	    throw "Invalid popMatrix!";
+	  }
+	   self.mvMatrix = self.mvmvMatrixStack.pop();
+	  return self.mvMatrix;
+	}
 
   var initialize = function() {
     self.gl = initializeContainer(self.canvas);
