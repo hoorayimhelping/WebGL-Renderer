@@ -5,10 +5,12 @@ var Renderer = function(container) {
 
   self.gl = null;
   self.shaderProgram = null;
-  self.cubeVertexPositionBuffer = null;
-  self.cubeVertexColorBuffer = null;
   self.aspectRatio = 0.0;
   self.perspectiveMatrix = null;
+
+	self.cubeVertexPositionBuffer = null;
+  self.cubeVertexColorBuffer = null;
+	self.cubeVertexIndexBuffer = null;
 
   self.rotation = 0;
 
@@ -31,7 +33,7 @@ var Renderer = function(container) {
       mvTranslate([0.0, 0.0, -6.0]);
 
       animate();
-      mvRotate(self.rotation, [1, 1, 0]);
+      mvRotate(self.rotation, [1, 1, 1]);
 
       self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexPositionBuffer);
       self.gl.vertexAttribPointer(self.shaderProgram.vertexPositionAttribute, 3, self.gl.FLOAT, false, 0, 0);
@@ -39,7 +41,9 @@ var Renderer = function(container) {
       self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexColorBuffer);
       self.gl.vertexAttribPointer(self.shaderProgram.vertexColorAttribute, 4, self.gl.FLOAT, false, 0, 0);
 
+			self.gl.bindBuffer(self.gl.ELEMENT_ARRAY_BUFFER, self.cubeVertexIndexBuffer);
       setMatrixUniforms();
+			self.gl.drawElements(self.gl.TRIANGLES, 36, self.gl.UNSIGNED_SHORT, 0);
       self.gl.drawArrays(self.gl.TRIANGLE_STRIP, 0, 4);
     }
   }
@@ -123,10 +127,41 @@ var Renderer = function(container) {
     self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexPositionBuffer);
 
     var vertices = [
-      1.0,  1.0, 0.0,  
-     -1.0,  1.0, 0.0,  
-      1.0, -1.0, 0.0,  
-     -1.0, -1.0, 0.0
+			// front face
+     -1.0, -1.0,  1.0,
+      1.0, -1.0,  1.0,
+			1.0,  1.0,  1.0,
+		 -1.0,  1.0,  1.0,
+		
+		  // back face
+		 -1.0, -1.0, -1.0,
+		 -1.0,  1.0, -1.0,
+		  1.0,  1.0, -1.0,
+		  1.0, -1.0, -1.0,
+
+      // top face
+     -1.0,  1.0, -1.0,
+		 -1.0,  1.0,  1.0,
+		  1.0,  1.0,  1.0,
+		  1.0,  1.0, -1.0,
+
+      // bottom face
+     -1.0, -1.0, -1.0,
+		  1.0, -1.0, -1.0,
+		  1.0, -1.0,  1.0,
+		 -1.0, -1.0,  1.0,
+
+      // right face
+			1.0, -1.0, -1.0,
+			1.0,  1.0, -1.0,
+			1.0,  1.0,  1.0,
+			1.0, -1.0,  1.0,
+
+      // left face
+		 -1.0, -1.0, -1.0,
+		 -1.0, -1.0,  1.0,
+		 -1.0,  1.0,  1.0,
+		 -1.0,  1.0, -1.0
     ];
 
     self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
@@ -134,13 +169,33 @@ var Renderer = function(container) {
     self.cubeVertexColorBuffer = self.gl.createBuffer();
     self.gl.bindBuffer(self.gl.ARRAY_BUFFER, self.cubeVertexColorBuffer);
     var colors = [
-      1.0, 0.0, 0.0, 1.0,
-      0.0, 1.0, 0.0, 1.0,
-      0.0, 0.0, 1.0, 1.0,
-      1.0, 1.0, 0.0, 1.0
+      [1.0, 0.0, 0.0, 1.0], // front face
+      [1.0, 1.0, 0.0, 1.0], // back face
+      [0.0, 1.0, 0.0, 1.0], // top face
+      [0.0, 1.0, 1.0, 1.0], // bottom face
+			[1.0, 0.0, 1.0, 1.0], // right face
+			[0.5, 0.5, 1.0, 1.0], // left face
     ];
+		var unpackedColors = [];
+		for (var i = 0; i < colors.length; i++) {
+		  for (var j = 0; j < 4; j++) {
+		    unpackedColors = unpackedColors.concat(colors[i]);
+			}
+		}
+		self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(unpackedColors), self.gl.STATIC_DRAW);
 
-    self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(colors), self.gl.STATIC_DRAW);
+		self.cubeVertexIndexBuffer = self.gl.createBuffer();
+		self.gl.bindBuffer(self.gl.ELEMENT_ARRAY_BUFFER, self.cubeVertexIndexBuffer);
+		var cubeVertexIndices = [
+		  0, 1, 2,      0, 2, 3,    // front face
+		  4, 5, 6,      4, 6, 7,    // back face
+		  8, 9, 10,     8, 10, 11,  // top face
+		  12, 13, 14,   12, 14, 15, // bottom face
+		  16, 17, 18,   16, 18, 19, // right face
+		  20, 21, 22,   20, 22, 23  // left face
+		]
+
+		self.gl.bufferData(self.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), self.gl.STATIC_DRAW);
   }
 
   var initializeContainer = function(canvas) {
